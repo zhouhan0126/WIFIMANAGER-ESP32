@@ -5,9 +5,9 @@ ESP32&&ESP8266 WiFi Connection manager with fallback web configuration portal
 The configuration portal is of the captive variety, so on various devices it will present the configuration dialogue as soon as you connect to the created access point.
 
 First attempt at a library. Lots more changes and fixes to do. Contributions are welcome.
-
-
-
+##Libray
+[WebServer](https://github.com/zhouhan0126/WebServer-esp32)
+[DNSServer](https://github.com/zhouhan0126/DNSServer---esp32)
 
 ## How It Looks
 ![ESP8266 WiFi Captive Portal Homepage](http://i.imgur.com/YPvW9eql.png) ![ESP8266 WiFi Captive Portal Configuration](http://i.imgur.com/oicWJ4gl.png)
