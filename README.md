@@ -1,86 +1,36 @@
 # WiFiManager
-ESP8266 WiFi Connection manager with fallback web configuration portal
+ESP32&&ESP8266 WiFi Connection manager with fallback web configuration portal
 
-[![Build Status](https://travis-ci.org/tzapu/WiFiManager.svg?branch=master)](https://travis-ci.org/tzapu/WiFiManager)
 
 The configuration portal is of the captive variety, so on various devices it will present the configuration dialogue as soon as you connect to the created access point.
 
 First attempt at a library. Lots more changes and fixes to do. Contributions are welcome.
 
-#### This works with the ESP8266 Arduino platform with a recent stable release(2.0.0 or newer) https://github.com/esp8266/Arduino
-
-## Contents
- - [How it works](#how-it-works)
- - [Wishlist](#wishlist)
- - [Quick start](#quick-start)
-   - Installing
-     - [Through Library Manager](#install-through-library-manager)
-     - [From Github](#checkout-from-github)
-   - [Using](#using)
- - [Documentation](#documentation)
-   - [Access Point Password](#password-protect-the-configuration-access-point)
-   - [Callbacks](#callbacks)
-   - [Configuration Portal Timeout](#configuration-portal-timeout)
-   - [On Demand Configuration](#on-demand-configuration-portal)
-   - [Custom Parameters](#custom-parameters)
-   - [Custom IP Configuration](#custom-ip-configuration)
-   - [Filter Low Quality Networks](#filter-networks)
-   - [Debug Output](#debug)
- - [Troubleshooting](#troubleshooting)
- - [Releases](#releases)
- - [Contributors](#contributions-and-thanks)
 
 
-## How It Works
-- when your ESP starts up, it sets it up in Station mode and tries to connect to a previously saved Access Point
-- if this is unsuccessful (or no previous network saved) it moves the ESP into Access Point mode and spins up a DNS and WebServer (default ip 192.168.4.1)
-- using any wifi enabled device with a browser (computer, phone, tablet) connect to the newly created Access Point
-- because of the Captive Portal and the DNS server you will either get a 'Join to network' type of popup or get any domain you try to access redirected to the configuration portal
-- choose one of the access points scanned, enter password, click save
-- ESP will try to connect. If successful, it relinquishes control back to your app. If not, reconnect to AP and reconfigure.
 
 ## How It Looks
 ![ESP8266 WiFi Captive Portal Homepage](http://i.imgur.com/YPvW9eql.png) ![ESP8266 WiFi Captive Portal Configuration](http://i.imgur.com/oicWJ4gl.png)
 
-## Wishlist
-- ~~remove dependency on EEPROM library~~
-- ~~move HTML Strings to PROGMEM~~
-- ~~cleanup and streamline code~~ (although this is ongoing)
-- if timeout is set, extend it when a page is fetched in AP mode
-- ~~add ability to configure more parameters than ssid/password~~
-- ~~maybe allow setting ip of ESP after reboot~~
-- ~~add to Arduino Library Manager~~
-- ~~add to PlatformIO~~
-- add multiple sets of network credentials
-- ~~allow users to customize CSS~~
-
-## Quick Start
-
-### Installing
-You can either install through the Arduino Library Manager or checkout the latest changes or a release from github
-
-#### Install through Library Manager
-__Currently version 0.8+ works with release 2.0.0 or newer of the [ESP8266 core for Arduino](https://github.com/esp8266/Arduino)__
- - in Arduino IDE got to Sketch/Include Library/Manage Libraries
-  ![Manage Libraries](http://i.imgur.com/9BkEBkR.png)
-
- - search for WiFiManager
-  ![WiFiManager package](http://i.imgur.com/18yIai8.png)
-
- - click Install and start [using it](#using)
-
-####  Checkout from github
-__Github version works with release 2.0.0 or newer of the [ESP8266 core for Arduino](https://github.com/esp8266/Arduino)__
-- Checkout library to your Arduino libraries folder
 
 ### Using
 - Include in your sketch
 ```cpp
-#include <ESP8266WiFi.h>          //ESP8266 Core WiFi Library (you most likely already have this in your sketch)
+#if defined(ESP8266)
+#include <ESP8266WiFi.h>          
+#else
+#include <WiFi.h>          
+#endif
 
-#include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
-#include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
-#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+//needed for library
+#include <DNSServer.h>
+#if defined(ESP8266)
+#include <ESP8266WebServer.h>
+#else
+#include <WebServer.h>
+#endif
+#include <WiFiManager.h>         
+
 ```
 
 - Initialize library, in your setup function add
@@ -260,76 +210,6 @@ Debug is enabled by default on Serial. To disable add before autoConnect
 ```cpp
 wifiManager.setDebugOutput(false);
 ```
-
-## Troubleshooting
-If you get compilation errors, more often than not, you may need to install a newer version of the ESP8266 core for Arduino.
-
-Changes added on 0.8 should make the latest trunk work without compilation errors. Tested down to ESP8266 core 2.0.0. **Please update to version 0.8**
-
-I am trying to keep releases working with release versions of the core, so they can be installed through boards manager, but if you checkout the latest version directly from github, sometimes, the library will only work if you update the ESP8266 core to the latest version because I am using some newly added function.
-
-If you connect to the created configuration Access Point but the configuration portal does not show up, just open a browser and type in the IP of the web portal, by default `192.168.4.1`.
-
-If trying to connect ends up in an endless loop, try to add `setConnectTimeout(60)` before `autoConnect();`. The parameter is timeout to try connecting in seconds.
-
-## Releases
-#### 0.12
-- removed 204 header response
-- fixed incompatibility with other libs using isnan and other std:: functions without namespace
-
-##### 0.11
-- a lot more reliable reconnecting to networks
-- custom html in custom parameters (for read only params)
-- custom html in custom parameter form (like labels)
-- custom head element (like custom css)
-- sort networks based on signal quality
-- remove duplicate networks
-
-##### 0.10
-- some css changes
-- bug fixes and speed improvements
-- added an alternative to waitForConnectResult() for debugging
-- changed `setTimeout(seconds)` to `setConfigPortalTimeout(seconds)`
-
-##### 0.9
- - fixed support for encoded characters in ssid/pass
-
-##### 0.8
- - made it compile on older versions of ESP8266 core as well, tested down to 2.0.0
- - added simple example for Custom IP
-
-##### 0.7
- - added static IP in station mode
- - added example of persisting custom IP to FS config.json
- - more option on portal homepage
- - added on PlatformIO
-
-##### 0.6
- - custom parameters
- - prettier
- - on demand config portal
- - commit #100 :D
-
-##### 0.5
- - Added to Arduino Boards Manager - Thanks Max
- - moved most stuff to PROGMEM
- - added signal quality and a nice little padlock to show which networks are encrypted
-
-##### v0.4 - all of it user contributed changes - Thank you
- - added ability to password protect the configuration Access Point
- - callback for enter configuration mode
- - memory allocation improvements
-
-##### v0.3
- - removed the need for EEPROM and works with the 2.0.0 and above stable release of the ESP8266 for Arduino IDE package
- - removed restart on save of credentials
- - updated examples
-
-##### v0.2
-needs the latest staging version (or at least a recent release of the staging version) to work
-
-##### v0.1
-works with the staging release ver. 1.6.5-1044-g170995a, built on Aug 10, 2015 of the ESP8266 Arduino library.
 
 
 ### Contributions and thanks
