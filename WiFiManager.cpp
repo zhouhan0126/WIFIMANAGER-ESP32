@@ -210,7 +210,8 @@ boolean  WiFiManager::startConfigPortal(char const *apName, char const *apPasswo
       delay(2000);
       DEBUG_WM(F("Connecting to new AP"));
 
-      // using user-provided  _ssid, _pass in place of system-stored ssid and pass
+      // Using user-provided  _ssid, _pass in place of system-stored ssid and pass
+      WiFi.softAPdisconnect(true) ; 
       if (connectWifi(_ssid, _pass) != WL_CONNECTED) {
         DEBUG_WM(F("Failed to connect."));
       } else {
