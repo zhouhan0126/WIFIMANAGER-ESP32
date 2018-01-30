@@ -14,23 +14,23 @@
 #define WiFiManager_h
 
 #if defined(ESP8266)
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
+    #include <ESP8266WiFi.h>
+    #include <ESP8266WebServer.h>
 #else
-#include <WiFi.h>
-#include <WebServer.h>
+    #include <WiFi.h>
+    #include <WebServer.h>
 #endif
 #include <DNSServer.h>
 #include <memory>
 
 #if defined(ESP8266)
-extern "C" {
-  #include "user_interface.h"
-}
-#define ESP_getChipId()   (ESP.getChipId())
+    extern "C" {
+      #include "user_interface.h"
+    }
+    #define ESP_getChipId()   (ESP.getChipId())
 #else
-#include <esp_wifi.h>
-#define ESP_getChipId()   ((uint32_t)ESP.getEfuseMac())
+    #include <esp_wifi.h>
+    #define ESP_getChipId()   ((uint32_t)ESP.getEfuseMac())
 #endif
 
 const char HTTP_HEAD[] PROGMEM            = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/><title>{v}</title>";
