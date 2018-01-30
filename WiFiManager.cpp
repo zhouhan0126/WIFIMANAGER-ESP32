@@ -14,23 +14,28 @@
 #include <algorithm>
 
 WiFiManagerParameter::WiFiManagerParameter(const char *custom) {
-  _id = NULL;
-  _placeholder = NULL;
-  _length = 0;
-  _value = NULL;
+  _id           = NULL;
+  _placeholder  = NULL;
+  _length       = 0;
+  _value        = NULL;
+  _label        = NULL ; 
 
   _customHTML = custom;
 }
 
 WiFiManagerParameter::WiFiManagerParameter(const char *id, const char *placeholder, const char *defaultValue, int length) {
-  init(id, placeholder, defaultValue, length, "");
+  init(id, placeholder, defaultValue, length, "", NULL);
 }
 
 WiFiManagerParameter::WiFiManagerParameter(const char *id, const char *placeholder, const char *defaultValue, int length, const char *custom) {
-  init(id, placeholder, defaultValue, length, custom);
+  init(id, placeholder, defaultValue, length, custom, NULL);
 }
 
-void WiFiManagerParameter::init(const char *id, const char *placeholder, const char *defaultValue, int length, const char *custom) {
+WiFiManagerParameter::WiFiManagerParameter(const char *id, const char *placeholder, const char *defaultValue, int length, const char *custom, const char *label){
+  init(id, placeholder, defaultValue, length, custom, label);
+}
+
+void WiFiManagerParameter::init(const char *id, const char *placeholder, const char *defaultValue, int length, const char *custom, const char *label) {
   _id = id;
   _placeholder = placeholder;
   _length = length;
@@ -43,6 +48,7 @@ void WiFiManagerParameter::init(const char *id, const char *placeholder, const c
   }
 
   _customHTML = custom;
+  _label      = label ; 
 }
 
 const char* WiFiManagerParameter::getValue() {
@@ -59,6 +65,9 @@ int WiFiManagerParameter::getValueLength() {
 }
 const char* WiFiManagerParameter::getCustomHTML() {
   return _customHTML;
+}
+const char* WiFiManagerParameter::getLabel() {
+  return _label ;
 }
 
 WiFiManager::WiFiManager() {
@@ -516,7 +525,15 @@ void WiFiManager::handleWifi(boolean scan) {
       pitem.replace("{l}", parLength);
       pitem.replace("{v}", _params[i]->getValue());
       pitem.replace("{c}", _params[i]->getCustomHTML());
-    } else {
+
+      if ( _params[i]->getLabel() == NULL )
+        pitem.replace("{la}", "") ; 
+      else
+        pitem.replace("{la}", "<label for\"" + String( _params[i]->getID()) + "\">" + String(_params[i]->getLabel()) + "</label><br/>") ; 
+
+    } 
+    else 
+    {
       pitem = _params[i]->getCustomHTML();
     }
 
