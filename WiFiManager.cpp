@@ -88,6 +88,34 @@ void WiFiManager::addParameter(WiFiManagerParameter *p) {
   DEBUG_WM(p->getID());
 }
 
+uint8_t WiFiManager::getNbParameters() 
+{
+  return _paramsCount ;
+}
+
+WiFiManagerParameter* WiFiManager::getParameter(uint8_t i_iParameter) 
+{
+  if ( i_iParameter >= _paramsCount )
+  {
+    DEBUG_WM("Cannot retrieve parameter, invalid index.");
+    return NULL ; 
+  }
+  else
+  {
+    return _params[i_iParameter] ; 
+  }
+}
+
+WiFiManagerParameter* WiFiManager::getParameter(const char* i_ID) 
+{
+  for ( uint8_t iParameter = 0 ; iParameter < _paramsCount ; iParameter++ )
+  {
+    if ( strcmp(_params[iParameter]->getID(), i_ID) == 0 )
+      return _params[iParameter] ;
+  }
+  return NULL ; 
+}
+
 void WiFiManager::setupConfigPortal() {
   dnsServer.reset(new DNSServer());
 #ifdef ESP8266
