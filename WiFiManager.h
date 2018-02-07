@@ -14,23 +14,23 @@
 #define WiFiManager_h
 
 #if defined(ESP8266)
-#include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
+    #include <ESP8266WiFi.h>
+    #include <ESP8266WebServer.h>
 #else
-#include <WiFi.h>
-#include <WebServer.h>
+    #include <WiFi.h>
+    #include <WebServer.h>
 #endif
 #include <DNSServer.h>
 #include <memory>
 
 #if defined(ESP8266)
-extern "C" {
-  #include "user_interface.h"
-}
-#define ESP_getChipId()   (ESP.getChipId())
+    extern "C" {
+      #include "user_interface.h"
+    }
+    #define ESP_getChipId()   (ESP.getChipId())
 #else
-#include <esp_wifi.h>
-#define ESP_getChipId()   ((uint32_t)ESP.getEfuseMac())
+    #include <esp_wifi.h>
+    #define ESP_getChipId()   ((uint32_t)ESP.getEfuseMac())
 #endif
 
 const char HTTP_HEAD[] PROGMEM            = "<!DOCTYPE html><html lang=\"en\"><head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1, user-scalable=no\"/><title>{v}</title>";
@@ -41,7 +41,7 @@ const char HTTP_PORTAL_OPTIONS[] PROGMEM  = "<form action=\"/wifi\" method=\"get
 //<form action=\"/i\" method=\"get\"><button>Info</button></form><br/><form action=\"/r\" method=\"post\"><button>Reset</button></form>";
 const char HTTP_ITEM[] PROGMEM            = "<div><a href='#p' onclick='c(this)'>{v}</a>&nbsp;<span class='q {i}'>{r}%</span></div>";
 const char HTTP_FORM_START[] PROGMEM      = "<form method='get' action='wifisave'><input id='s' name='s' length=32 placeholder='SSID'><br/><input id='p' name='p' length=64 type='password' placeholder='password'><br/>";
-const char HTTP_FORM_PARAM[] PROGMEM      = "<br/><input id='{i}' name='{n}' length={l} placeholder='{p}' value='{v}' {c}>";
+const char HTTP_FORM_PARAM[] PROGMEM      = "<div>{la}<input id='{i}' name='{n}' maxlength='{l}' placeholder='{p}' value='{v}' {c}></div>";
 const char HTTP_FORM_END[] PROGMEM        = "<br/><button type='submit'>save</button></form>";
 const char HTTP_SCAN_LINK[] PROGMEM       = "<br/><div class=\"c\"><a href=\"/wifi\">Scan</a></div>";
 const char HTTP_SAVED[] PROGMEM           = "<div>Credentials Saved<br />Trying to connect Weread to network.<br />If it fails reconnect to AP to try again</div>";
@@ -54,20 +54,24 @@ class WiFiManagerParameter {
     WiFiManagerParameter(const char *custom);
     WiFiManagerParameter(const char *id, const char *placeholder, const char *defaultValue, int length);
     WiFiManagerParameter(const char *id, const char *placeholder, const char *defaultValue, int length, const char *custom);
+    WiFiManagerParameter(const char *id, const char *placeholder, const char *defaultValue, int length, const char *custom, const char *label);
+
 
     const char *getID();
     const char *getValue();
     const char *getPlaceholder();
     int         getValueLength();
     const char *getCustomHTML();
+    const char *getLabel();
   private:
     const char *_id;
     const char *_placeholder;
     char       *_value;
     int         _length;
     const char *_customHTML;
+    const char *_label;
 
-    void init(const char *id, const char *placeholder, const char *defaultValue, int length, const char *custom);
+    void init(const char *id, const char *placeholder, const char *defaultValue, int length, const char *custom, const char *label);
 
     friend class WiFiManager;
 };
@@ -112,8 +116,14 @@ class WiFiManager
     void          setAPCallback( void (*func)(WiFiManager*) );
     //called when settings have been changed and connection was successful
     void          setSaveConfigCallback( void (*func)(void) );
-    //adds a custom parameter
+    // Adds a custom parameter
     void          addParameter(WiFiManagerParameter *p);
+    // Get the number of parameters registered
+    uint8_t       getNbParameters(void) ; 
+    // Get the parameter at a specified index
+    WiFiManagerParameter* getParameter(uint8_t i_iParameter) ; 
+    // Get the parameter with a specified index
+    WiFiManagerParameter* getParameter(const char* i_ID) ;
     //if this is set, it will exit after config, even if connection is unsuccessful.
     void          setBreakAfterConfig(boolean shouldBreak);
     //if this is set, try WPS setup when starting (this will delay config portal for up to 2 mins)

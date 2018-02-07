@@ -11,30 +11,36 @@
  **************************************************************/
 
 #include "WiFiManager.h"
+#include <algorithm>
 
 WiFiManagerParameter::WiFiManagerParameter(const char *custom) {
-  _id = NULL;
-  _placeholder = NULL;
-  _length = 0;
-  _value = NULL;
+  _id           = NULL;
+  _placeholder  = NULL;
+  _length       = 0;
+  _value        = NULL;
+  _label        = NULL ; 
 
   _customHTML = custom;
 }
 
 WiFiManagerParameter::WiFiManagerParameter(const char *id, const char *placeholder, const char *defaultValue, int length) {
-  init(id, placeholder, defaultValue, length, "");
+  init(id, placeholder, defaultValue, length, "", NULL);
 }
 
 WiFiManagerParameter::WiFiManagerParameter(const char *id, const char *placeholder, const char *defaultValue, int length, const char *custom) {
-  init(id, placeholder, defaultValue, length, custom);
+  init(id, placeholder, defaultValue, length, custom, NULL);
 }
 
-void WiFiManagerParameter::init(const char *id, const char *placeholder, const char *defaultValue, int length, const char *custom) {
+WiFiManagerParameter::WiFiManagerParameter(const char *id, const char *placeholder, const char *defaultValue, int length, const char *custom, const char *label){
+  init(id, placeholder, defaultValue, length, custom, label);
+}
+
+void WiFiManagerParameter::init(const char *id, const char *placeholder, const char *defaultValue, int length, const char *custom, const char *label) {
   _id = id;
   _placeholder = placeholder;
   _length = length;
   _value = new char[length + 1];
-  for (int i = 0; i < length; i++) {
+  for (int i = 0; i < length + 1; i++) {
     _value[i] = 0;
   }
   if (defaultValue != NULL) {
@@ -42,6 +48,7 @@ void WiFiManagerParameter::init(const char *id, const char *placeholder, const c
   }
 
   _customHTML = custom;
+  _label      = label ; 
 }
 
 const char* WiFiManagerParameter::getValue() {
@@ -58,6 +65,9 @@ int WiFiManagerParameter::getValueLength() {
 }
 const char* WiFiManagerParameter::getCustomHTML() {
   return _customHTML;
+}
+const char* WiFiManagerParameter::getLabel() {
+  return _label ;
 }
 
 WiFiManager::WiFiManager() {
@@ -76,6 +86,34 @@ void WiFiManager::addParameter(WiFiManagerParameter *p) {
   _paramsCount++;
   DEBUG_WM("Adding parameter");
   DEBUG_WM(p->getID());
+}
+
+uint8_t WiFiManager::getNbParameters() 
+{
+  return _paramsCount ;
+}
+
+WiFiManagerParameter* WiFiManager::getParameter(uint8_t i_iParameter) 
+{
+  if ( i_iParameter >= _paramsCount )
+  {
+    DEBUG_WM("Cannot retrieve parameter, invalid index.");
+    return NULL ; 
+  }
+  else
+  {
+    return _params[i_iParameter] ; 
+  }
+}
+
+WiFiManagerParameter* WiFiManager::getParameter(const char* i_ID) 
+{
+  for ( uint8_t iParameter = 0 ; iParameter < _paramsCount ; iParameter++ )
+  {
+    if ( strcmp(_params[iParameter]->getID(), i_ID) == 0 )
+      return _params[iParameter] ;
+  }
+  return NULL ; 
 }
 
 void WiFiManager::setupConfigPortal() {
@@ -199,22 +237,26 @@ boolean  WiFiManager::startConfigPortal(char const *apName, char const *apPasswo
     // check if timeout
     if(configPortalHasTimeout()) break;
 
-    //DNS
+    // Process DNS request and web server request
     dnsServer->processNextRequest();
-    //HTTP
     server->handleClient();
 
-
-    if (connect) {
+    // If some data about an AP has been saved, try to connect to it
+    if (connect) 
+    {
       connect = false;
       delay(2000);
       DEBUG_WM(F("Connecting to new AP"));
 
-      // using user-provided  _ssid, _pass in place of system-stored ssid and pass
-      if (connectWifi(_ssid, _pass) != WL_CONNECTED) {
-        DEBUG_WM(F("Failed to connect."));
-      } else {
-        //connected
+      // Using user-provided  _ssid, _pass in place of system-stored ssid and pass
+      WiFi.softAPdisconnect(true) ; 
+      uint8_t connectResult = connectWifi(_ssid, _pass) ; 
+      if ( connectResult != WL_CONNECTED) 
+      {
+        DEBUG_WM(F("Failed to connect."));  
+      }
+      else 
+      {
         WiFi.mode(WIFI_STA);
         //notify that configuration has changed and any optional parameters should be saved
         if ( _savecallback != NULL) {
@@ -244,37 +286,44 @@ boolean  WiFiManager::startConfigPortal(char const *apName, char const *apPasswo
 }
 
 
-int WiFiManager::connectWifi(String ssid, String pass) {
+int WiFiManager::connectWifi(String ssid, String pass) 
+{
   DEBUG_WM(F("Connecting as wifi client..."));
 
-  // check if we've got static_ip settings, if we do, use those.
-  if (_sta_static_ip) {
+  // Check if we've got static_ip settings, if we do, use those.
+  if (_sta_static_ip) 
+  {
     DEBUG_WM(F("Custom STA IP/GW/Subnet"));
     WiFi.config(_sta_static_ip, _sta_static_gw, _sta_static_sn);
     DEBUG_WM(WiFi.localIP());
   }
-  //fix for auto connect racing issue
-  if (WiFi.status() == WL_CONNECTED) {
+  // Fix for auto connect racing issue
+  if (WiFi.status() == WL_CONNECTED) 
+  {
     DEBUG_WM("Already connected. Bailing out.");
     return WL_CONNECTED;
   }
-  //check if we have ssid and pass and force those, if not, try with last saved values
-  if (ssid != "") {
+  // Check if we have ssid and pass and force those, if not, try with last saved values
+  if (ssid != "") 
     WiFi.begin(ssid.c_str(), pass.c_str());
-  } else {
-    if (WiFi.SSID()) {
+  else 
+  {
+    if (WiFi.SSID()) 
+    {
       DEBUG_WM("Using last saved values, should be faster");
-#if defined(ESP8266)
-      //trying to fix connection in progress hanging
-      ETS_UART_INTR_DISABLE();
-      wifi_station_disconnect();
-      ETS_UART_INTR_ENABLE();
-#else
-      esp_wifi_disconnect();
-#endif
+      #if defined(ESP8266)
+        //trying to fix connection in progress hanging
+        ETS_UART_INTR_DISABLE();
+        wifi_station_disconnect();
+        ETS_UART_INTR_ENABLE();
+      #else
+        esp_wifi_disconnect();
+      #endif
 
       WiFi.begin();
-    } else {
+    } 
+    else 
+    {
       DEBUG_WM("No saved credentials");
     }
   }
@@ -333,9 +382,9 @@ void WiFiManager::startWPS() {
     DEBUG_WM(_ssid);
   }
   return _ssid;
-  }
+}
 
-  String WiFiManager::getPassword() {
+String WiFiManager::getPassword() {
   if (_pass == "") {
     DEBUG_WM(F("Reading Password"));
     _pass = WiFi.psk();
@@ -343,7 +392,7 @@ void WiFiManager::startWPS() {
     //DEBUG_WM(_pass);
   }
   return _pass;
-  }
+}
 
 String WiFiManager::getConfigPortalSSID() {
   return _apName;
@@ -429,69 +478,44 @@ void WiFiManager::handleWifi(boolean scan) {
   page += _customHeadElement;
   page += FPSTR(HTTP_HEAD_END);
 
-  if (scan) {
+  if (scan) 
+  {
     int n = WiFi.scanNetworks();
     DEBUG_WM(F("Scan done"));
-    if (n == 0) {
+    if (n == 0) 
+    {
       DEBUG_WM(F("No networks found"));
       page += F("No networks found. Refresh to scan again.");
-    } else {
-
-      //sort networks
-      int indices[n];
-      for (int i = 0; i < n; i++) {
-        indices[i] = i;
-      }
-
+    } 
+    else 
+    {
       // RSSI SORT
+      int indices[n];
+      for (int i = 0; i < n; i++) 
+        indices[i] = i;
 
-      // old sort
-      for (int i = 0; i < n; i++) {
-        for (int j = i + 1; j < n; j++) {
-          if (WiFi.RSSI(indices[j]) > WiFi.RSSI(indices[i])) {
-            std::swap(indices[i], indices[j]);
-          }
-        }
-      }
+      std::sort(indices, indices + n, [](const int & a, const int & b) -> bool { return WiFi.RSSI(a) > WiFi.RSSI(b); });
 
-      /*std::sort(indices, indices + n, [](const int & a, const int & b) -> bool
-        {
-        return WiFi.RSSI(a) > WiFi.RSSI(b);
-        });*/
-
-      // remove duplicates ( must be RSSI sorted )
-      if (_removeDuplicateAPs) {
-        String cssid;
-        for (int i = 0; i < n; i++) {
-          if (indices[i] == -1) continue;
-          cssid = WiFi.SSID(indices[i]);
-          for (int j = i + 1; j < n; j++) {
-            if (cssid == WiFi.SSID(indices[j])) {
-              DEBUG_WM("DUP AP: " + WiFi.SSID(indices[j]));
-              indices[j] = -1; // set dup aps to index -1
-            }
-          }
-        }
-      }
-
-      //display networks in page
-      for (int i = 0; i < n; i++) {
-        if (indices[i] == -1) continue; // skip dups
+      // Display networks in page
+      for (int i = 0; i < n; i++) 
+      {
         DEBUG_WM(WiFi.SSID(indices[i]));
         DEBUG_WM(WiFi.RSSI(indices[i]));
-        int quality = getRSSIasQuality(WiFi.RSSI(indices[i]));
 
-        if (_minimumQuality == -1 || _minimumQuality < quality) {
+        // If the quality of the signal is greater than the minimum
+        int quality = getRSSIasQuality(WiFi.RSSI(indices[i]));
+        if (_minimumQuality == -1 || quality > _minimumQuality ) 
+        {
           String item = FPSTR(HTTP_ITEM);
           String rssiQ;
           rssiQ += quality;
           item.replace("{v}", WiFi.SSID(indices[i]));
           item.replace("{r}", rssiQ);
-#if defined(ESP8266)
-          if (WiFi.encryptionType(indices[i]) != ENC_TYPE_NONE) {
-#else
-          if (WiFi.encryptionType(indices[i]) != WIFI_AUTH_OPEN) {
-#endif
+          #if defined(ESP8266)
+            if (WiFi.encryptionType(indices[i]) != ENC_TYPE_NONE) {
+          #else
+            if (WiFi.encryptionType(indices[i]) != WIFI_AUTH_OPEN) {
+          #endif
             item.replace("{i}", "l");
           } else {
             item.replace("{i}", "");
@@ -499,25 +523,29 @@ void WiFiManager::handleWifi(boolean scan) {
           //DEBUG_WM(item);
           page += item;
           delay(0);
-        } else {
+        } 
+        else 
+        {
           DEBUG_WM(F("Skipping due to quality"));
         }
-
       }
-      page += "<br/>";
     }
   }
 
+  // Add the inputs for SSID and password 
   page += FPSTR(HTTP_FORM_START);
+
+  // Add the optionnal parameters
   char parLength[2];
-  // add the extra parameters to the form
-  for (int i = 0; i < _paramsCount; i++) {
+  for (int i = 0; i < _paramsCount; i++) 
+  {
     if (_params[i] == NULL) {
       break;
     }
 
     String pitem = FPSTR(HTTP_FORM_PARAM);
-    if (_params[i]->getID() != NULL) {
+    if (_params[i]->getID() != NULL) 
+    {
       pitem.replace("{i}", _params[i]->getID());
       pitem.replace("{n}", _params[i]->getID());
       pitem.replace("{p}", _params[i]->getPlaceholder());
@@ -525,7 +553,15 @@ void WiFiManager::handleWifi(boolean scan) {
       pitem.replace("{l}", parLength);
       pitem.replace("{v}", _params[i]->getValue());
       pitem.replace("{c}", _params[i]->getCustomHTML());
-    } else {
+
+      if ( _params[i]->getLabel() == NULL )
+        pitem.replace("{la}", "") ; 
+      else
+        pitem.replace("{la}", "<label for\"" + String( _params[i]->getID()) + "\">" + String(_params[i]->getLabel()) + "</label><br/>") ; 
+
+    } 
+    else 
+    {
       pitem = _params[i]->getCustomHTML();
     }
 
@@ -588,14 +624,15 @@ void WiFiManager::handleWifiSave() {
   _pass = server->arg("p").c_str();
 
   //parameters
-  for (int i = 0; i < _paramsCount; i++) {
-    if (_params[i] == NULL) {
+  for (int i = 0; i < _paramsCount; i++) 
+  {
+    if (_params[i] == NULL) 
       break;
-    }
+    
     //read parameter
     String value = server->arg(_params[i]->getID()).c_str();
     //store it in array
-    value.toCharArray(_params[i]->_value, _params[i]->_length);
+    value.toCharArray(_params[i]->_value, _params[i]->_length + 1);
     DEBUG_WM(F("Parameter"));
     DEBUG_WM(_params[i]->getID());
     DEBUG_WM(value);
@@ -653,23 +690,23 @@ void WiFiManager::handleInfo() {
   page += ESP_getChipId();
   page += F("</dd>");
   page += F("<dt>Flash Chip ID</dt><dd>");
-#if defined(ESP8266)
-  page += ESP.getFlashChipId();
-#else
-  // TODO
-  page += F("TODO");
-#endif
+  #if defined(ESP8266)
+    page += ESP.getFlashChipId();
+  #else
+    // TODO
+    page += F("TODO");
+  #endif
   page += F("</dd>");
   page += F("<dt>IDE Flash Size</dt><dd>");
   page += ESP.getFlashChipSize();
   page += F(" bytes</dd>");
   page += F("<dt>Real Flash Size</dt><dd>");
-#if defined(ESP8266)
-  page += ESP.getFlashChipRealSize();
-#else
-  // TODO
-  page += F("TODO");
-#endif
+  #if defined(ESP8266)
+    page += ESP.getFlashChipRealSize();
+  #else
+    // TODO
+    page += F("TODO");
+  #endif
   page += F(" bytes</dd>");
   page += F("<dt>Soft AP IP</dt><dd>");
   page += WiFi.softAPIP().toString();
@@ -707,11 +744,11 @@ void WiFiManager::handleReset() {
 
   DEBUG_WM(F("Sent reset page"));
   delay(5000);
-#if defined(ESP8266)
-  ESP.reset();
-#else
-  ESP.restart();
-#endif
+  #if defined(ESP8266)
+    ESP.reset();
+  #else
+    ESP.restart();
+  #endif
   delay(2000);
 }
 
