@@ -213,6 +213,8 @@ boolean  WiFiManager::startConfigPortal(char const *apName, char const *apPasswo
       // using user-provided  _ssid, _pass in place of system-stored ssid and pass
       if (connectWifi(_ssid, _pass) != WL_CONNECTED) {
         DEBUG_WM(F("Failed to connect."));
+		ESP.restart();
+        delay(1000);
       } else {
         //connected
         WiFi.mode(WIFI_STA);
