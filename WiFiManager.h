@@ -44,7 +44,7 @@ const char WM_HTTP_FORM_START[] PROGMEM      = "<form method='get' action='wifis
 const char WM_HTTP_FORM_PARAM[] PROGMEM      = "<br/><input id='{i}' name='{n}' length={l} placeholder='{p}' value='{v}' {c}>";
 const char WM_HTTP_FORM_END[] PROGMEM        = "<br/><button type='submit'>save</button></form>";
 const char WM_HTTP_SCAN_LINK[] PROGMEM       = "<br/><div class=\"c\"><a href=\"/wifi\">Scan</a></div>";
-const char HTTP_SAVED[] PROGMEM           = "<div>Credentials Saved<br />Trying to connect Weread to network.<br />If it fails reconnect to AP to try again</div>";
+const char WM_HTTP_SAVED[] PROGMEM           = "<div>Credentials Saved<br />Trying to connect Weread to network.<br />If it fails reconnect to AP to try again</div>";
 const char WM_HTTP_END[] PROGMEM             = "</div></body></html>";
 
 #define WIFI_MANAGER_MAX_PARAMS 10
