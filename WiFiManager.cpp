@@ -355,6 +355,12 @@ void WiFiManager::resetSettings() {
   // TODO On ESP32 this does not erase the SSID and password. See
   // https://github.com/espressif/arduino-esp32/issues/400
   // For now, use "make erase_flash".
+  
+ #ifdef ESP32
+  DEBUG_WM(F("Resetting Credentials on ESP32"));
+  WiFi.begin("0","0");       // adding this effectively seems to erase the previous stored SSID/PW
+ #endif
+ 
   WiFi.disconnect(true);
   //delay(200);
 }
