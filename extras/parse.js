@@ -46,7 +46,7 @@ fs.readFile(inFile, 'utf8', function (err,data) {
 
 
         console.log(def);
-        //const char HTTP_HEAD[] PROGMEM            =
+        //const char HTTP_HEAD_START[] PROGMEM            =
         let string = 'const char ' + constantName + '[] PROGMEM';
         for (let i = string.length; i < 42; i++) {
           string += ' ';
