@@ -234,7 +234,7 @@ boolean  WiFiManager::startConfigPortal(char const *apName, char const *apPasswo
         break;
       }
     }
-    yield();
+    vTaskDelay(10); //yield does not work as intended on ESP32-SOLO
   }
 
   server.reset();
