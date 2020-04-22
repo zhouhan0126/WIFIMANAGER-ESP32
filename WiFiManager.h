@@ -123,6 +123,8 @@ class WiFiManager
     //if this is true, remove duplicated Access Points - defaut true
     void          setRemoveDuplicateAPs(boolean removeDuplicates);
 
+    void          setHostname(char * hostname);
+
   private:
     std::unique_ptr<DNSServer>        dnsServer;
 #ifdef ESP8266
@@ -146,6 +148,8 @@ class WiFiManager
     unsigned long _configPortalTimeout    = 0;
     unsigned long _connectTimeout         = 0;
     unsigned long _configPortalStart      = 0;
+
+    String        _device_hostname        = "";
 
     IPAddress     _ap_static_ip;
     IPAddress     _ap_static_gw;
