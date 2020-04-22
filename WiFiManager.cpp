@@ -151,6 +151,13 @@ boolean WiFiManager::autoConnect(char const *apName, char const *apPassword) {
   // attempt to connect; should it fail, fall back to AP
   WiFi.mode(WIFI_STA);
 
+  // If a hostname has been provided, now is the time to set it
+  if (_device_hostname != "")
+  {
+    DEBUG_WM("Using device hostname' " + _device_hostname + "'");
+    WiFi.setHostname(_device_hostname.c_str());
+  }
+
   if (connectWifi("", "") == WL_CONNECTED)   {
     DEBUG_WM(F("IP Address:"));
     DEBUG_WM(WiFi.localIP());
@@ -771,6 +778,14 @@ void WiFiManager::setRemoveDuplicateAPs(boolean removeDuplicates) {
   _removeDuplicateAPs = removeDuplicates;
 }
 
+// Set the hostname of this device (will appear in device lists on routers etc.)
+void WiFiManager::setHostname(char * hostname)
+{
+  if (hostname)
+  {
+    _device_hostname = hostname;
+  }
+}
 
 
 template <typename Generic>
