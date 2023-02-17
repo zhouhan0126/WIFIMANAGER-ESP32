@@ -6,7 +6,7 @@ The configuration portal is of the captive variety, so on various devices it wil
 
 First attempt at a library. Lots more changes and fixes to do. Contributions are welcome.
 
-## Libray
+## Library
 [WebServer  https://github.com/zhouhan0126/WebServer-esp32](https://github.com/zhouhan0126/WebServer-esp32)
 
 [DNSServer   https://github.com/zhouhan0126/DNSServer---esp32](https://github.com/zhouhan0126/DNSServer---esp32)
